@@ -520,10 +520,11 @@ int mbedtls_x509_crt_verify_restartable( mbedtls_x509_crt *crt,
  *                      entry in the generated linked list of candidate signers.
  *                      This must not be \c NULL.
  *
- * \note                The callback must only return \c 0 on a fatal error.
- *                      If, in contrast, the search for a potential signer
- *                      completes without a single candidate, the callback
- *                      must return \c 0 and get \c *candidate_cas to \c NULL.
+ * \note                The callback must only return a non-zero value on a
+ *                      fatal error. If, in contrast, the search for a potential
+ *                      signer completes without a single candidate, the
+ *                      callback must return \c 0 and get \c *candidate_cas
+ *                      to \c NULL.
  *
  * \return              \c 0 on success. In this case, \c *candidate_cas points
  *                      to a heap-allocated linked list of instances of
