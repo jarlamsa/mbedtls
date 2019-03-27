@@ -1745,6 +1745,18 @@
 //#define MBEDTLS_X509_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
 
 /**
+ * \def MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+ *
+ * If set, this enables the X.509 API `mbedtls_x509_crt_verify_with_cb()`
+ * and the SSL API `mbedtls_ssl_conf_ca_cb()` which allow users to configure
+ * the set of trusted certificates through a callback instead of a linked
+ * list.
+ *
+ * Uncomment to enable trusted certificate callbacks.
+ */
+//#define MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+
+/**
  * \def MBEDTLS_X509_CHECK_KEY_USAGE
  *
  * Enable verification of the keyUsage extension (CA and leaf certificates).
