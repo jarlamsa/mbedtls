@@ -2073,7 +2073,35 @@ void mbedtls_ssl_conf_ca_chain( mbedtls_ssl_config *conf,
 
 #if defined(MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK)
 /**
- * TBD
+ * \brief          Set the trusted certificate callback.
+ *
+ *                 This API allows to register the set of trusted certificates
+ *                 through a callback, instead of a linked list as configured
+ *                 by mbedtls_ssl_conf_ca_chain().
+ *
+ *                 This is useful for example in contexts where a large number
+ *                 of CAs are used, and the inefficiency of maintaining them
+ *                 in a linked list cannot be tolerated.
+ *
+ *                 See the documentation of `mbedtls_x509_ca_cb_t` for
+ *                 more information.
+ *
+ * \param conf     The SSL configuration to register the callback with.
+ * \param f_ca_cb  The trusted certificate callback to use when verifying
+ *                 certificate chains.
+ * \param p_ca_cb  The context to be passed to \p f_ca_cb.
+ *
+ * \warning        In multi-threaded environments, the callback \p f_ca_cb
+ *                 must be thread-safe, and it is the user's responsibility
+ *                 to guaranteee this (for example through a mutex
+ *                 contained in the callback context pointed to by \p p_ca_cb).
+ *
+ * \note           This function should not be used in conjunction with
+ *                 mbedtls_ssl_conf_ca_chain(): Any call to this function
+ *                 overwrites the values set through earlier calls to
+ *                 mbedtls_ssl_conf_ca_chain() or mbedtls_ssl_conf_ca_cb().
+ *
+ * \note           The use of CRLs is currently not supported with this API.
  */
 void mbedtls_ssl_conf_ca_cb( mbedtls_ssl_config *conf,
                              mbedtls_x509_ca_cb_t f_ca_cb,
