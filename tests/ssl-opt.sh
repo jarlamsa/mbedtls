@@ -2587,10 +2587,32 @@ run_test    "Authentication: server badcert, client required" \
             -c "! mbedtls_ssl_handshake returned" \
             -c "X509 - Certificate verification failed"
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: server badcert, client required, ca_cb" \
+            "$P_SRV crt_file=data_files/server5-badsign.crt \
+             key_file=data_files/server5.key ca_callback=1" \
+            "$P_CLI debug_level=1 auth_mode=required ca_callback=1" \
+            1 \
+            -c "x509_verify_cert() returned" \
+            -c "! The certificate is not correctly signed by the trusted CA" \
+            -c "! mbedtls_ssl_handshake returned" \
+            -c "X509 - Certificate verification failed"
+
 run_test    "Authentication: server badcert, client optional" \
             "$P_SRV crt_file=data_files/server5-badsign.crt \
              key_file=data_files/server5.key" \
             "$P_CLI debug_level=1 auth_mode=optional" \
+            0 \
+            -c "x509_verify_cert() returned" \
+            -c "! The certificate is not correctly signed by the trusted CA" \
+            -C "! mbedtls_ssl_handshake returned" \
+            -C "X509 - Certificate verification failed"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: server badcert, client optional, ca_cb" \
+            "$P_SRV crt_file=data_files/server5-badsign.crt \
+             key_file=data_files/server5.key ca_callback=1" \
+            "$P_CLI debug_level=1 auth_mode=optional ca_callback=1" \
             0 \
             -c "x509_verify_cert() returned" \
             -c "! The certificate is not correctly signed by the trusted CA" \
@@ -2608,9 +2630,34 @@ run_test    "Authentication: server goodcert, client optional, no trusted CA" \
             -C "X509 - Certificate verification failed" \
             -C "SSL - No CA Chain is set, but required to operate"
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: server goodcert, client opt, no trusted CA, ca_cb" \
+            "$P_SRV ca_callback=1" \
+            "$P_CLI debug_level=3 auth_mode=optional ca_file=none ca_path=none \
+             ca_callback=1" \
+            0 \
+            -c "x509_verify_cert() returned" \
+            -c "! The certificate is not correctly signed by the trusted CA" \
+            -c "! Certificate verification flags"\
+            -C "! mbedtls_ssl_handshake returned" \
+            -C "X509 - Certificate verification failed" \
+            -C "SSL - No CA Chain is set, but required to operate"
+
 run_test    "Authentication: server goodcert, client required, no trusted CA" \
             "$P_SRV" \
             "$P_CLI debug_level=3 auth_mode=required ca_file=none ca_path=none" \
+            1 \
+            -c "x509_verify_cert() returned" \
+            -c "! The certificate is not correctly signed by the trusted CA" \
+            -c "! Certificate verification flags"\
+            -c "! mbedtls_ssl_handshake returned" \
+            -c "SSL - No CA Chain is set, but required to operate"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: server goodcrt, client req, no trusted CA, ca_cb" \
+            "$P_SRV ca_callback=1" \
+            "$P_CLI debug_level=3 auth_mode=required ca_file=none ca_path=none \
+             ca_callback=1" \
             1 \
             -c "x509_verify_cert() returned" \
             -c "! The certificate is not correctly signed by the trusted CA" \
@@ -2635,11 +2682,35 @@ run_test    "Authentication: server ECDH p256v1, client required, p256v1 unsuppo
             -c "! Certificate verification flags"\
             -C "bad server certificate (ECDH curve)" # Expect failure at earlier verification stage
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+requires_config_enabled MBEDTLS_ECP_C
+run_test    "Authentication:server ECDH p256v1, client req, p256v1 unsupported,ca_cb" \
+            "$P_SRV debug_level=1 key_file=data_files/server5.key \
+             crt_file=data_files/server5.ku-ka.crt ca_callback=1" \
+            "$P_CLI debug_level=3 auth_mode=required curves=secp521r1 \
+             ca_callback=1" \
+            1 \
+            -c "bad certificate (EC key curve)"\
+            -c "! Certificate verification flags"\
+            -C "bad server certificate (ECDH curve)" # Expect failure at earlier verification stage
+
 requires_config_enabled MBEDTLS_ECP_C
 run_test    "Authentication: server ECDH p256v1, client optional, p256v1 unsupported" \
             "$P_SRV debug_level=1 key_file=data_files/server5.key \
              crt_file=data_files/server5.ku-ka.crt" \
             "$P_CLI debug_level=3 auth_mode=optional curves=secp521r1" \
+            1 \
+            -c "bad certificate (EC key curve)"\
+            -c "! Certificate verification flags"\
+            -c "bad server certificate (ECDH curve)" # Expect failure only at ECDH params check
+        
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+requires_config_enabled MBEDTLS_ECP_C
+run_test    "Authentication:server ECDH p256v1, client opt, p256v1 unsupported,ca_cb" \
+            "$P_SRV debug_level=1 key_file=data_files/server5.key \
+             crt_file=data_files/server5.ku-ka.crt ca_callback=1" \
+            "$P_CLI debug_level=3 auth_mode=optional curves=secp521r1 \
+             ca_callback=1" \
             1 \
             -c "bad certificate (EC key curve)"\
             -c "! Certificate verification flags"\
@@ -2655,6 +2726,17 @@ run_test    "Authentication: server badcert, client none" \
             -C "! mbedtls_ssl_handshake returned" \
             -C "X509 - Certificate verification failed"
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: server badcert, client none, ca_cb" \
+            "$P_SRV crt_file=data_files/server5-badsign.crt \
+             key_file=data_files/server5.key ca_callback=1" \
+            "$P_CLI debug_level=1 auth_mode=none ca_callback=1" \
+            0 \
+            -C "x509_verify_cert() returned" \
+            -C "! The certificate is not correctly signed by the trusted CA" \
+            -C "! mbedtls_ssl_handshake returned" \
+            -C "X509 - Certificate verification failed"
+
 run_test    "Authentication: client SHA256, server required" \
             "$P_SRV auth_mode=required" \
             "$P_CLI debug_level=3 crt_file=data_files/server6.crt \
@@ -2664,11 +2746,33 @@ run_test    "Authentication: client SHA256, server required" \
             -c "Supported Signature Algorithm found: 4," \
             -c "Supported Signature Algorithm found: 5,"
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: client SHA256, server required, ca_cb" \
+            "$P_SRV auth_mode=required ca_callback=1" \
+            "$P_CLI debug_level=3 crt_file=data_files/server6.crt \
+             key_file=data_files/server6.key \
+             force_ciphersuite=TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384 \
+             ca_callback=1" \
+            0 \
+            -c "Supported Signature Algorithm found: 4," \
+            -c "Supported Signature Algorithm found: 5,"
+
 run_test    "Authentication: client SHA384, server required" \
             "$P_SRV auth_mode=required" \
             "$P_CLI debug_level=3 crt_file=data_files/server6.crt \
              key_file=data_files/server6.key \
              force_ciphersuite=TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256" \
+            0 \
+            -c "Supported Signature Algorithm found: 4," \
+            -c "Supported Signature Algorithm found: 5,"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: client SHA384, server required, ca_cb" \
+            "$P_SRV auth_mode=required ca_callback=1" \
+            "$P_CLI debug_level=3 crt_file=data_files/server6.crt \
+             key_file=data_files/server6.key \
+             force_ciphersuite=TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256 \
+             ca_callback=1" \
             0 \
             -c "Supported Signature Algorithm found: 4," \
             -c "Supported Signature Algorithm found: 5,"
@@ -2689,10 +2793,44 @@ run_test    "Authentication: client has no cert, server required (SSLv3)" \
             -c "! mbedtls_ssl_handshake returned" \
             -s "No client certification received from the client, but required by the authentication mode"
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+requires_config_enabled MBEDTLS_SSL_PROTO_SSL3
+run_test    "Authentication: client has no cert, server required (SSLv3), ca_cb" \
+            "$P_SRV debug_level=3 min_version=ssl3 auth_mode=required ca_callback=1" \
+            "$P_CLI debug_level=3 force_version=ssl3 crt_file=none \
+             key_file=data_files/server5.key ca_callback=1" \
+            1 \
+            -S "skip write certificate request" \
+            -C "skip parse certificate request" \
+            -c "got a certificate request" \
+            -c "got no certificate to send" \
+            -S "x509_verify_cert() returned" \
+            -s "client has no certificate" \
+            -s "! mbedtls_ssl_handshake returned" \
+            -c "! mbedtls_ssl_handshake returned" \
+            -s "No client certification received from the client, but required by the authentication mode"
+
 run_test    "Authentication: client has no cert, server required (TLS)" \
             "$P_SRV debug_level=3 auth_mode=required" \
             "$P_CLI debug_level=3 crt_file=none \
              key_file=data_files/server5.key" \
+            1 \
+            -S "skip write certificate request" \
+            -C "skip parse certificate request" \
+            -c "got a certificate request" \
+            -c "= write certificate$" \
+            -C "skip write certificate$" \
+            -S "x509_verify_cert() returned" \
+            -s "client has no certificate" \
+            -s "! mbedtls_ssl_handshake returned" \
+            -c "! mbedtls_ssl_handshake returned" \
+            -s "No client certification received from the client, but required by the authentication mode"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: client has no cert, server required (TLS), ca_cb" \
+            "$P_SRV debug_level=3 auth_mode=required ca_callback=1" \
+            "$P_CLI debug_level=3 crt_file=none \
+             key_file=data_files/server5.key ca_callback=1" \
             1 \
             -S "skip write certificate request" \
             -C "skip parse certificate request" \
@@ -2722,6 +2860,26 @@ run_test    "Authentication: client badcert, server required" \
             -s "send alert level=2 message=48" \
             -c "! mbedtls_ssl_handshake returned" \
             -s "X509 - Certificate verification failed"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: client badcert, server required, ca_cb" \
+            "$P_SRV debug_level=3 auth_mode=required ca_callback=1" \
+            "$P_CLI debug_level=3 crt_file=data_files/server5-badsign.crt \
+             key_file=data_files/server5.key ca_callback=1" \
+            1 \
+            -S "skip write certificate request" \
+            -C "skip parse certificate request" \
+            -c "got a certificate request" \
+            -C "skip write certificate" \
+            -C "skip write certificate verify" \
+            -S "skip parse certificate verify" \
+            -s "x509_verify_cert() returned" \
+            -s "! The certificate is not correctly signed by the trusted CA" \
+            -s "! mbedtls_ssl_handshake returned" \
+            -s "send alert level=2 message=48" \
+            -c "! mbedtls_ssl_handshake returned" \
+            -s "X509 - Certificate verification failed"
+
 # We don't check that the client receives the alert because it might
 # detect that its write end of the connection is closed and abort
 # before reading the alert message.
@@ -2730,6 +2888,24 @@ run_test    "Authentication: client cert not trusted, server required" \
             "$P_SRV debug_level=3 auth_mode=required" \
             "$P_CLI debug_level=3 crt_file=data_files/server5-selfsigned.crt \
              key_file=data_files/server5.key" \
+            1 \
+            -S "skip write certificate request" \
+            -C "skip parse certificate request" \
+            -c "got a certificate request" \
+            -C "skip write certificate" \
+            -C "skip write certificate verify" \
+            -S "skip parse certificate verify" \
+            -s "x509_verify_cert() returned" \
+            -s "! The certificate is not correctly signed by the trusted CA" \
+            -s "! mbedtls_ssl_handshake returned" \
+            -c "! mbedtls_ssl_handshake returned" \
+            -s "X509 - Certificate verification failed"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: client cert not trusted, server required, ca_cb" \
+            "$P_SRV debug_level=3 auth_mode=required ca_callback=1" \
+            "$P_CLI debug_level=3 crt_file=data_files/server5-selfsigned.crt \
+             key_file=data_files/server5.key ca_callback=1" \
             1 \
             -S "skip write certificate request" \
             -C "skip parse certificate request" \
@@ -2760,10 +2936,46 @@ run_test    "Authentication: client badcert, server optional" \
             -C "! mbedtls_ssl_handshake returned" \
             -S "X509 - Certificate verification failed"
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: client badcert, server optional, ca_cb" \
+            "$P_SRV debug_level=3 auth_mode=optional ca_callback=1" \
+            "$P_CLI debug_level=3 crt_file=data_files/server5-badsign.crt \
+             key_file=data_files/server5.key ca_callback=1" \
+            0 \
+            -S "skip write certificate request" \
+            -C "skip parse certificate request" \
+            -c "got a certificate request" \
+            -C "skip write certificate" \
+            -C "skip write certificate verify" \
+            -S "skip parse certificate verify" \
+            -s "x509_verify_cert() returned" \
+            -s "! The certificate is not correctly signed by the trusted CA" \
+            -S "! mbedtls_ssl_handshake returned" \
+            -C "! mbedtls_ssl_handshake returned" \
+            -S "X509 - Certificate verification failed"
+
 run_test    "Authentication: client badcert, server none" \
             "$P_SRV debug_level=3 auth_mode=none" \
             "$P_CLI debug_level=3 crt_file=data_files/server5-badsign.crt \
              key_file=data_files/server5.key" \
+            0 \
+            -s "skip write certificate request" \
+            -C "skip parse certificate request" \
+            -c "got no certificate request" \
+            -c "skip write certificate" \
+            -c "skip write certificate verify" \
+            -s "skip parse certificate verify" \
+            -S "x509_verify_cert() returned" \
+            -S "! The certificate is not correctly signed by the trusted CA" \
+            -S "! mbedtls_ssl_handshake returned" \
+            -C "! mbedtls_ssl_handshake returned" \
+            -S "X509 - Certificate verification failed"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: client badcert, server none, ca_cb" \
+            "$P_SRV debug_level=3 auth_mode=none ca_callback=1" \
+            "$P_CLI debug_level=3 crt_file=data_files/server5-badsign.crt \
+             key_file=data_files/server5.key ca_callback=1" \
             0 \
             -s "skip write certificate request" \
             -C "skip parse certificate request" \
@@ -2794,8 +3006,37 @@ run_test    "Authentication: client no cert, server optional" \
             -C "! mbedtls_ssl_handshake returned" \
             -S "X509 - Certificate verification failed"
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: client no cert, server optional, ca_cb" \
+            "$P_SRV debug_level=3 auth_mode=optional ca_callback=1" \
+            "$P_CLI debug_level=3 crt_file=none key_file=none ca_callback=1" \
+            0 \
+            -S "skip write certificate request" \
+            -C "skip parse certificate request" \
+            -c "got a certificate request" \
+            -C "skip write certificate$" \
+            -C "got no certificate to send" \
+            -S "SSLv3 client has no certificate" \
+            -c "skip write certificate verify" \
+            -s "skip parse certificate verify" \
+            -s "! Certificate was missing" \
+            -S "! mbedtls_ssl_handshake returned" \
+            -C "! mbedtls_ssl_handshake returned" \
+            -S "X509 - Certificate verification failed"
+
 run_test    "Authentication: openssl client no cert, server optional" \
             "$P_SRV debug_level=3 auth_mode=optional" \
+            "$O_CLI" \
+            0 \
+            -S "skip write certificate request" \
+            -s "skip parse certificate verify" \
+            -s "! Certificate was missing" \
+            -S "! mbedtls_ssl_handshake returned" \
+            -S "X509 - Certificate verification failed"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: openssl client no cert, server optional, ca_cb" \
+            "$P_SRV debug_level=3 auth_mode=optional ca_callback=1" \
             "$O_CLI" \
             0 \
             -S "skip write certificate request" \
@@ -2814,9 +3055,31 @@ run_test    "Authentication: client no cert, openssl server optional" \
             -c "skip write certificate verify" \
             -C "! mbedtls_ssl_handshake returned"
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: client no cert, openssl server optional, ca_cb" \
+            "$O_SRV -verify 10" \
+            "$P_CLI debug_level=3 crt_file=none key_file=none ca_callback=1" \
+            0 \
+            -C "skip parse certificate request" \
+            -c "got a certificate request" \
+            -C "skip write certificate$" \
+            -c "skip write certificate verify" \
+            -C "! mbedtls_ssl_handshake returned"
+
 run_test    "Authentication: client no cert, openssl server required" \
             "$O_SRV -Verify 10" \
             "$P_CLI debug_level=3 crt_file=none key_file=none" \
+            1 \
+            -C "skip parse certificate request" \
+            -c "got a certificate request" \
+            -C "skip write certificate$" \
+            -c "skip write certificate verify" \
+            -c "! mbedtls_ssl_handshake returned"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: client no cert, openssl server required, ca_cb" \
+            "$O_SRV -Verify 10" \
+            "$P_CLI debug_level=3 crt_file=none key_file=none ca_callback=1" \
             1 \
             -C "skip parse certificate request" \
             -c "got a certificate request" \
@@ -2828,6 +3091,27 @@ requires_config_enabled MBEDTLS_SSL_PROTO_SSL3
 run_test    "Authentication: client no cert, ssl3" \
             "$P_SRV debug_level=3 auth_mode=optional force_version=ssl3" \
             "$P_CLI debug_level=3 crt_file=none key_file=none min_version=ssl3" \
+            0 \
+            -S "skip write certificate request" \
+            -C "skip parse certificate request" \
+            -c "got a certificate request" \
+            -C "skip write certificate$" \
+            -c "skip write certificate verify" \
+            -c "got no certificate to send" \
+            -s "SSLv3 client has no certificate" \
+            -s "skip parse certificate verify" \
+            -s "! Certificate was missing" \
+            -S "! mbedtls_ssl_handshake returned" \
+            -C "! mbedtls_ssl_handshake returned" \
+            -S "X509 - Certificate verification failed"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+requires_config_enabled MBEDTLS_SSL_PROTO_SSL3
+run_test    "Authentication: client no cert, ssl3, ca_cb" \
+            "$P_SRV debug_level=3 auth_mode=optional force_version=ssl3 \
+             ca_callback=1" \
+            "$P_CLI debug_level=3 crt_file=none key_file=none min_version=ssl3 \
+             ca_callback=1" \
             0 \
             -S "skip write certificate request" \
             -C "skip parse certificate request" \
@@ -2868,11 +3152,31 @@ run_test    "Authentication: server max_int chain, client default" \
             0 \
             -C "X509 - A fatal error occurred"
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+requires_full_size_output_buffer
+run_test    "Authentication: server max_int chain, client default, ca_cb" \
+            "$P_SRV crt_file=data_files/dir-maxpath/c09.pem \
+                    key_file=data_files/dir-maxpath/09.key ca_callback=1" \
+            "$P_CLI server_name=CA09 ca_file=data_files/dir-maxpath/00.crt \
+             ca_callback=1" \
+            0 \
+            -C "X509 - A fatal error occurred"
+
 requires_full_size_output_buffer
 run_test    "Authentication: server max_int+1 chain, client default" \
             "$P_SRV crt_file=data_files/dir-maxpath/c10.pem \
                     key_file=data_files/dir-maxpath/10.key" \
             "$P_CLI server_name=CA10 ca_file=data_files/dir-maxpath/00.crt" \
+            1 \
+            -c "X509 - A fatal error occurred"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+requires_full_size_output_buffer
+run_test    "Authentication: server max_int+1 chain, client default, ca_cb" \
+            "$P_SRV crt_file=data_files/dir-maxpath/c10.pem \
+                    key_file=data_files/dir-maxpath/10.key ca_callback=1" \
+            "$P_CLI server_name=CA10 ca_file=data_files/dir-maxpath/00.crt \
+             ca_callback=1" \
             1 \
             -c "X509 - A fatal error occurred"
 
@@ -2885,12 +3189,32 @@ run_test    "Authentication: server max_int+1 chain, client optional" \
             1 \
             -c "X509 - A fatal error occurred"
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+requires_full_size_output_buffer
+run_test    "Authentication: server max_int+1 chain, client optional, ca_cb" \
+            "$P_SRV crt_file=data_files/dir-maxpath/c10.pem \
+                    key_file=data_files/dir-maxpath/10.key ca_callback=1" \
+            "$P_CLI server_name=CA10 ca_file=data_files/dir-maxpath/00.crt \
+                    auth_mode=optional ca_callback=1" \
+            1 \
+            -c "X509 - A fatal error occurred"
+
 requires_full_size_output_buffer
 run_test    "Authentication: server max_int+1 chain, client none" \
             "$P_SRV crt_file=data_files/dir-maxpath/c10.pem \
                     key_file=data_files/dir-maxpath/10.key" \
             "$P_CLI server_name=CA10 ca_file=data_files/dir-maxpath/00.crt \
                     auth_mode=none" \
+            0 \
+            -C "X509 - A fatal error occurred"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+requires_full_size_output_buffer
+run_test    "Authentication: server max_int+1 chain, client none, ca_cb" \
+            "$P_SRV crt_file=data_files/dir-maxpath/c10.pem \
+                    key_file=data_files/dir-maxpath/10.key ca_callback=1" \
+            "$P_CLI server_name=CA10 ca_file=data_files/dir-maxpath/00.crt \
+                    auth_mode=none ca_callback=1" \
             0 \
             -C "X509 - A fatal error occurred"
 
@@ -2902,11 +3226,30 @@ run_test    "Authentication: client max_int+1 chain, server default" \
             0 \
             -S "X509 - A fatal error occurred"
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+requires_full_size_output_buffer
+run_test    "Authentication: client max_int+1 chain, server default, ca_cb" \
+            "$P_SRV ca_file=data_files/dir-maxpath/00.crt ca_callback=1" \
+            "$P_CLI crt_file=data_files/dir-maxpath/c10.pem \
+                    key_file=data_files/dir-maxpath/10.key ca_callback=1" \
+            0 \
+            -S "X509 - A fatal error occurred"
+
 requires_full_size_output_buffer
 run_test    "Authentication: client max_int+1 chain, server optional" \
             "$P_SRV ca_file=data_files/dir-maxpath/00.crt auth_mode=optional" \
             "$P_CLI crt_file=data_files/dir-maxpath/c10.pem \
                     key_file=data_files/dir-maxpath/10.key" \
+            1 \
+            -s "X509 - A fatal error occurred"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+requires_full_size_output_buffer
+run_test    "Authentication: client max_int+1 chain, server optional, ca_cb" \
+            "$P_SRV ca_file=data_files/dir-maxpath/00.crt auth_mode=optional \
+             ca_callback=1" \
+            "$P_CLI crt_file=data_files/dir-maxpath/c10.pem \
+                    key_file=data_files/dir-maxpath/10.key ca_callback=1" \
             1 \
             -s "X509 - A fatal error occurred"
 
@@ -2918,11 +3261,30 @@ run_test    "Authentication: client max_int+1 chain, server required" \
             1 \
             -s "X509 - A fatal error occurred"
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+requires_full_size_output_buffer
+run_test    "Authentication: client max_int+1 chain, server required, ca_cb" \
+            "$P_SRV ca_file=data_files/dir-maxpath/00.crt auth_mode=required \
+             ca_callback=1" \
+            "$P_CLI crt_file=data_files/dir-maxpath/c10.pem \
+                    key_file=data_files/dir-maxpath/10.key ca_callback=1" \
+            1 \
+            -s "X509 - A fatal error occurred"
+
 requires_full_size_output_buffer
 run_test    "Authentication: client max_int chain, server required" \
             "$P_SRV ca_file=data_files/dir-maxpath/00.crt auth_mode=required" \
             "$P_CLI crt_file=data_files/dir-maxpath/c09.pem \
                     key_file=data_files/dir-maxpath/09.key" \
+            0 \
+            -S "X509 - A fatal error occurred"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+requires_full_size_output_buffer
+run_test    "Authentication: client max_int chain, server required, ca_cb" \
+            "$P_SRV ca_file=data_files/dir-maxpath/00.crt auth_mode=required ca_callback=1" \
+            "$P_CLI crt_file=data_files/dir-maxpath/c09.pem \
+                    key_file=data_files/dir-maxpath/09.key ca_callback=1" \
             0 \
             -S "X509 - A fatal error occurred"
 
@@ -2935,6 +3297,14 @@ run_test    "Authentication: send CA list in CertificateRequest  (default)" \
             0 \
             -s "requested DN"
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: send CA list in CertificateRequest  (default), ca_cb" \
+            "$P_SRV debug_level=3 auth_mode=required ca_callback=1" \
+            "$P_CLI crt_file=data_files/server6.crt \
+             key_file=data_files/server6.key ca_callback=1" \
+            0 \
+            -s "requested DN"
+
 run_test    "Authentication: do not send CA list in CertificateRequest" \
             "$P_SRV debug_level=3 auth_mode=required cert_req_ca_list=0" \
             "$P_CLI crt_file=data_files/server6.crt \
@@ -2942,10 +3312,31 @@ run_test    "Authentication: do not send CA list in CertificateRequest" \
             0 \
             -S "requested DN"
 
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: do not send CA list in CertificateRequest, ca_cb" \
+            "$P_SRV debug_level=3 auth_mode=required cert_req_ca_list=0 ca_callback=1" \
+            "$P_CLI crt_file=data_files/server6.crt \
+             key_file=data_files/server6.key ca_callback=1" \
+            0 \
+            -S "requested DN"
+
 run_test    "Authentication: send CA list in CertificateRequest, client self signed" \
             "$P_SRV debug_level=3 auth_mode=required cert_req_ca_list=0" \
             "$P_CLI debug_level=3 crt_file=data_files/server5-selfsigned.crt \
              key_file=data_files/server5.key" \
+            1 \
+            -S "requested DN" \
+            -s "x509_verify_cert() returned" \
+            -s "! The certificate is not correctly signed by the trusted CA" \
+            -s "! mbedtls_ssl_handshake returned" \
+            -c "! mbedtls_ssl_handshake returned" \
+            -s "X509 - Certificate verification failed"
+
+requires_config_enabled MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
+run_test    "Authentication: send CA list in CertificateRequest, client self signed, ca_cb" \
+            "$P_SRV debug_level=3 auth_mode=required cert_req_ca_list=0 ca_callback=1" \
+            "$P_CLI debug_level=3 crt_file=data_files/server5-selfsigned.crt \
+             key_file=data_files/server5.key ca_callback=1" \
             1 \
             -S "requested DN" \
             -s "x509_verify_cert() returned" \
