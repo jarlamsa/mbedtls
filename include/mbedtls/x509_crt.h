@@ -540,7 +540,7 @@ typedef int (*mbedtls_x509_crt_ca_cb_t)( void *p_ctx,
  *                 uses a callback to acquire the list of trusted CA
  *                 certificates.
  *
- * \param crt      a certificate (chain) to be verified
+ * \param crt      The certificate chain to be verified.
  * \param f_ca_cb  The callback to be used to query for potential signers
  *                 of a given child certificate. See the documentation of
  *                 ::mbedtls_x509_crt_ca_cb_t for more information.
@@ -548,13 +548,12 @@ typedef int (*mbedtls_x509_crt_ca_cb_t)( void *p_ctx,
  * \param profile  The security profile for the verification.
  * \param cn       The expected Common Name. This may be \c NULL if the
  *                 CN need not be verified.
- * \param flags    result of the verification
- * \param f_vrfy   verification function
- * \param p_vrfy   verification parameter
+ * \param flags    The address at which to store the result of the verification.
+ * \param f_vrfy   The verification callback to use. See the documentation
+ *                 of mbedtls_x509_crt_verify() for more information.
+ * \param p_vrfy   The context to be passed to \p f_vrfy.
  *
- * \return         See \c mbedtls_crt_verify_with_profile(), or
- * \return         #MBEDTLS_ERR_ECP_IN_PROGRESS if maximum number of
- *                 operations was reached: see \c mbedtls_ecp_set_max_ops().
+ * \return         See \c mbedtls_crt_verify_with_profile().
  */
 int mbedtls_x509_crt_verify_with_cb( mbedtls_x509_crt *crt,
                      mbedtls_x509_crt_ca_cb_t f_ca_cb,
