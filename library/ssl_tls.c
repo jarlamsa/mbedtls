@@ -932,7 +932,6 @@ static int ssl_populate_transform( mbedtls_ssl_context *ssl )
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
     int psa_fallthrough;
 #endif /* MBEDTLS_USE_PSA_CRYPTO */
-    unsigned char tmp[64];
     unsigned char keyblk[256];
     unsigned char *key1;
     unsigned char *key2;
@@ -948,8 +947,6 @@ static int ssl_populate_transform( mbedtls_ssl_context *ssl )
     mbedtls_ssl_session *session = ssl->session_negotiate;
     mbedtls_ssl_transform *transform = ssl->transform_negotiate;
     mbedtls_ssl_handshake_params *handshake = ssl->handshake;
-
-    MBEDTLS_SSL_DEBUG_MSG( 2, ( "=> derive keys" ) );
 
 #if defined(MBEDTLS_SSL_ENCRYPT_THEN_MAC) && \
     defined(MBEDTLS_SSL_SOME_MODES_USE_MAC)
@@ -993,14 +990,6 @@ static int ssl_populate_transform( mbedtls_ssl_context *ssl )
                                transform->out_cid_len );
     }
 #endif /* MBEDTLS_SSL_DTLS_CONNECTION_ID */
-
-    /*
-     * Swap the client and server random values.
-     */
-    memcpy( tmp, handshake->randbytes, 64 );
-    memcpy( handshake->randbytes, tmp + 32, 32 );
-    memcpy( handshake->randbytes + 32, tmp, 32 );
-    mbedtls_platform_zeroize( tmp, sizeof( tmp ) );
 
     /*
      *  SSLv3:
@@ -1448,11 +1437,8 @@ static int ssl_populate_transform( mbedtls_ssl_context *ssl )
     }
 #endif /* MBEDTLS_ZLIB_SUPPORT */
 
-    MBEDTLS_SSL_DEBUG_MSG( 2, ( "<= derive keys" ) );
 end:
     mbedtls_platform_zeroize( keyblk, sizeof( keyblk ) );
-    mbedtls_platform_zeroize( handshake->randbytes,
-                              sizeof( handshake->randbytes ) );
     return( ret );
 }
 
@@ -1667,6 +1653,9 @@ int mbedtls_ssl_derive_keys( mbedtls_ssl_context *ssl )
     const mbedtls_ssl_ciphersuite_t * const ciphersuite_info =
         ssl->handshake->ciphersuite_info;
 
+    MBEDTLS_SSL_DEBUG_MSG( 2, ( "=> derive keys" ) );
+
+    /* Set PRF, calc_verify and calc_finished function pointers */
     ret = ssl_set_handshake_prfs( ssl->handshake,
                                   ssl->minor_ver,
                                   ciphersuite_info->mac );
@@ -1676,6 +1665,7 @@ int mbedtls_ssl_derive_keys( mbedtls_ssl_context *ssl )
         return( ret );
     }
 
+    /* Compute master secret if needed */
     ret = ssl_compute_master( ssl->handshake,
                               ssl->session_negotiate->master,
                               ssl );
@@ -1685,7 +1675,32 @@ int mbedtls_ssl_derive_keys( mbedtls_ssl_context *ssl )
         return( ret );
     }
 
-    return( ssl_populate_transform( ssl ) );
+    /* Swap the client and server random values:
+     * - MS derivation wanted client+server (RFC 5246 8.1)
+     * - key derivation wants server+client (RFC 5246 6.3) */
+    {
+        unsigned char tmp[64];
+        memcpy( tmp, ssl->handshake->randbytes, 64 );
+        memcpy( ssl->handshake->randbytes, tmp + 32, 32 );
+        memcpy( ssl->handshake->randbytes + 32, tmp, 32 );
+        mbedtls_platform_zeroize( tmp, sizeof( tmp ) );
+    }
+
+    /* Populate transform structure */
+    ret = ssl_populate_transform( ssl );
+    if( ret != 0 )
+    {
+        MBEDTLS_SSL_DEBUG_RET( 1, "ssl_populate_transform", ret );
+        return( ret );
+    }
+
+    /* We no longer need Server/ClientHello.random values */
+    mbedtls_platform_zeroize( ssl->handshake->randbytes,
+                      sizeof( ssl->handshake->randbytes ) );
+
+    MBEDTLS_SSL_DEBUG_MSG( 2, ( "<= derive keys" ) );
+
+    return( 0 );
 }
 
 #if defined(MBEDTLS_SSL_PROTO_SSL3)
