@@ -11125,7 +11125,7 @@ int mbedtls_ssl_context_save( mbedtls_ssl_context *ssl,
                               size_t buf_len,
                               size_t *olen )
 {
-    /* Unimplemented yet */
+    /* Unimplemented */
     (void) ssl;
 
     if( buf != NULL )
@@ -11143,7 +11143,7 @@ int mbedtls_ssl_context_load( mbedtls_ssl_context *ssl,
                               const unsigned char *buf,
                               size_t len )
 {
-    /* Unimplemented yet */
+    /* Unimplemented */
     (void) ssl;
     (void) buf;
     (void) len;
