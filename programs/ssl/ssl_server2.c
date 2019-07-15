@@ -1598,6 +1598,10 @@ int main( int argc, char *argv[] )
     size_t cid_len = 0;
     size_t cid_renego_len = 0;
 #endif
+#if defined(MBEDTLS_SSL_CONTEXT_SERIALIZATION)
+    unsigned char *context_buf = NULL;
+    size_t context_buf_len;
+#endif
 
     int i;
     char *p, *q;
@@ -3819,7 +3823,6 @@ data_exchange:
     if( opt.serialize != 0 )
     {
         size_t buf_len;
-        unsigned char *context_buf = NULL;
 
         mbedtls_printf( "  . Serializing live connection..." );
 
@@ -3839,6 +3842,7 @@ data_exchange:
 
             goto exit;
         }
+        context_buf_len = buf_len;
 
         if( ( ret = mbedtls_ssl_context_save( &ssl, context_buf,
                                               buf_len, &buf_len ) ) != 0 )
@@ -3929,6 +3933,10 @@ data_exchange:
 
             goto exit;
         }
+
+        mbedtls_free( context_buf );
+        context_buf = NULL;
+        context_buf_len = 0;
 
         mbedtls_printf( " ok\n" );
     }
@@ -4040,6 +4048,12 @@ exit:
 #endif
 
     mbedtls_free( buf );
+
+#if defined(MBEDTLS_SSL_CONTEXT_SERIALIZATION)
+    if( context_buf != NULL )
+        mbedtls_platform_zeroize( context_buf, context_buf_len );
+    mbedtls_free( context_buf );
+#endif
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
 #if defined(MBEDTLS_MEMORY_DEBUG)
