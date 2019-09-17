@@ -34,6 +34,10 @@
 #include "cipher.h"
 #include "oid.h"
 
+#if defined(MBEDTLS_CCM_C)
+#include "ccm.h"
+#endif
+
 #if defined(MBEDTLS_MD5_C)
 #include "md5.h"
 #endif
@@ -751,6 +755,9 @@ struct mbedtls_ssl_transform
 
     mbedtls_cipher_context_t cipher_ctx_enc;    /*!<  encryption context      */
     mbedtls_cipher_context_t cipher_ctx_dec;    /*!<  decryption context      */
+
+    mbedtls_ccm_context      ccm_ctx_enc;       /*!<  CCM encryption context  */
+    mbedtls_ccm_context      ccm_ctx_dec;       /*!<  CCM decryption context  */
 
 #if defined(MBEDTLS_SSL_CONTEXT_SERIALIZATION)
     /* We need the Hello random bytes in order to re-derive keys from the
