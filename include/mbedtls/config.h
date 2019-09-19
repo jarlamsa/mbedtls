@@ -3840,6 +3840,13 @@
  */
 //#define MBEDTLS_MD_SINGLE_HASH MBEDTLS_MD_INFO_SHA256
 
+/* Enable support for a single cipher type in the cipher layer.
+ *
+ * On highly constrained systems, this option can be used for supporting
+ * only a single cipher type to reduce code size.
+ */
+//#define MBEDTLS_CIPHER_SINGLE_TYPE MBEDTLS_CIPHER_AES_128_CCM
+
 /* \} SECTION: Compile-time SSL configuration */
 
 /* Target and application specific configurations
