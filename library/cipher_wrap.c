@@ -589,43 +589,11 @@ static int ccm_aes_setkey_wrap( void *ctx, const unsigned char *key,
                      key, key_bitlen );
 }
 
-static const mbedtls_cipher_base_t ccm_aes_info = {
-    MBEDTLS_CIPHER_ID_AES,
-    NULL,
-#if defined(MBEDTLS_CIPHER_MODE_CBC)
-    NULL,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_CFB)
-    NULL,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_OFB)
-    NULL,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_CTR)
-    NULL,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_XTS)
-    NULL,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_STREAM)
-    NULL,
-#endif
-    ccm_aes_setkey_wrap,
-    ccm_aes_setkey_wrap,
-    ccm_ctx_alloc,
-    ccm_ctx_free,
-};
+const mbedtls_cipher_base_t ccm_aes_info =
+    MBEDTLS_CIPHER_BASE( MBEDTLS_CIPHER_BASE_AES_128_CCM );
 
-static const mbedtls_cipher_info_t aes_128_ccm_info = {
-    MBEDTLS_CIPHER_AES_128_CCM,
-    MBEDTLS_MODE_CCM,
-    128,
-    "AES-128-CCM",
-    12,
-    MBEDTLS_CIPHER_VARIABLE_IV_LEN,
-    16,
-    &ccm_aes_info
-};
+const mbedtls_cipher_info_t aes_128_ccm_info =
+    MBEDTLS_CIPHER_INFO( MBEDTLS_CIPHER_INFO_AES_128_CCM );
 
 static const mbedtls_cipher_info_t aes_192_ccm_info = {
     MBEDTLS_CIPHER_AES_192_CCM,
